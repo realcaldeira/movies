@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, ActivityIndicator } from 'react-native';
 
 import { 
   Container, 
@@ -17,16 +17,23 @@ import Header from '../../components/Header';
 import SliderItem from '../../components/SliderItem';
 
 import api,{ key } from '../../services/api';
-import { getListMovies } from '../../utils/movie';
+import { getListMovies, randomBanner } from '../../utils/movie';
+
+import { useNavigation } from '@react-navigation/native';
 
 function Home(){
 
   const [nowMovies, setNowMovies] = useState([]);
   const [popularMovies, setPopularMovies] = useState([]);
   const [topMovies, setTopMovies] = useState([]);
+  const [bannerMovie, setBannerMovie] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  const navigation = useNavigation();
 
   useEffect(()=>{
     let isActive = true;
+    const ac = new AbortController();
 
     async function getMovies(){        
       const [nowData, popularData, topData] = await Promise.all([
@@ -53,19 +60,43 @@ function Home(){
           }),
       ])
 
-      const nowList = getListMovies(10, nowData.data.results);
-      const poupularList = getListMovies(5, popularData.data.results);
-      const topList = getListMovies(5, topData.data.results);
+      if(isActive){
+        const nowList = getListMovies(10, nowData.data.results);
+        const poupularList = getListMovies(5, popularData.data.results);
+        const topList = getListMovies(5, topData.data.results);
+        
+        setBannerMovie(nowData.data.results[randomBanner(nowData.data.results)]);
+        setNowMovies(nowList);
+        setPopularMovies(poupularList);
+        setTopMovies(topList);
+      }
 
-      setNowMovies(nowList);
-      setPopularMovies(poupularList);
-      setTopMovies(topList);
+      setLoading(false);
       
     }
     getMovies();
     
+    return () => {
+      isActive = false;
+      ac.abort();
+    }
 
   },[])
+
+  function navigateDetailsPage(item){
+    navigation.navigate('Detail', { id: item.id });
+  }
+
+  if(loading){
+    return(
+      <Container>
+        <ActivityIndicator 
+          size="large"
+          color="#FFF"
+        />
+      </Container>
+    )
+  }
 
   return(
     <Container>
@@ -90,11 +121,11 @@ function Home(){
         <Title>Em cartaz</Title>
 
         <BannerButton
-          onPress={()=>alert('Teste')}
+          onPress={()=> navigateDetailsPage(bannerMovie)}
         >
           <Banner 
             resizeMethod="resize"
-            source={{ uri: 'https://lh3.googleusercontent.com/proxy/YyUg8SWjjHTUP3CGDTUia2C_AS00Iy0fElYtfOjdQ85G4WO2NtV8fYp5pMoFfecSQ2G6h4POuAy9HgG1lPaCDvbjPr_L2QCtTH_raXsysmrCt7bdlfkgGAIOicVRT2ayGR-b36J3W5EZ_PE'}}
+            source={{ uri: `https://image.tmdb.org/t/p/original/${bannerMovie.poster_path}`}}
           />
         </BannerButton>
         
@@ -102,7 +133,8 @@ function Home(){
           horizontal={true}
           showsHorizontalScrollIndicator={false}
           data={nowMovies}
-          renderItem={ ({ item }) => <SliderItem data={item} />}
+          
+          renderItem={ ({ item }) => <SliderItem data={item} navigatePage={()=> navigateDetailsPage(item)}/>}
           keyExtractor={(item)=> String(item.id)}
         />
 
@@ -111,7 +143,7 @@ function Home(){
           horizontal={true}
           showsHorizontalScrollIndicator={false}
           data={popularMovies}
-          renderItem={ ({ item }) => <SliderItem data={item}/>}
+          renderItem={ ({ item }) => <SliderItem data={item} navigatePage={()=> navigateDetailsPage(item)}/>}
           keyExtractor={(item)=> String(item.id)}
         />
 
@@ -120,7 +152,7 @@ function Home(){
           horizontal={true}
           showsHorizontalScrollIndicator={false}
           data={topMovies}
-          renderItem={ ({ item }) => <SliderItem data={item} />}
+          renderItem={ ({ item }) => <SliderItem data={item} navigatePage={()=> navigateDetailsPage(item)}/> }
           keyExtractor={(item)=> String(item.id)}
         />
 
