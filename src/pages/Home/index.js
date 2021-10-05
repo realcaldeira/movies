@@ -28,6 +28,7 @@ function Home(){
   const [topMovies, setTopMovies] = useState([]);
   const [bannerMovie, setBannerMovie] = useState({});
   const [loading, setLoading] = useState(true);
+  const [input, setInput] = useState('');
 
   const navigation = useNavigation();
 
@@ -87,6 +88,14 @@ function Home(){
     navigation.navigate('Detail', { id: item.id });
   }
 
+  function handleSearchMovie(){
+
+    if(input === '') return;
+
+    navigation.navigate('Search', {name: input });
+    setInput('');
+  }
+
   if(loading){
     return(
       <Container>
@@ -105,8 +114,12 @@ function Home(){
       <SearchContainer>
         <Input 
           placeholder="Ex Vingadores"
+          value={input}
+          onChangeText={ (text) => setInput(text) }
         />
-        <SearchButton>
+        <SearchButton
+          onPress={handleSearchMovie}
+        >
           <Feather 
             name="search" 
             size={30}

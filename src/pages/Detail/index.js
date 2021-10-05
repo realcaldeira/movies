@@ -21,12 +21,15 @@ import Stars from 'react-native-stars';
 import Genres from '../../components/Genres';
 import ModalLink from '../../components/ModalLink';
 
+import { saveMovie, hasMovie, deleteMovie } from '../../utils/storage'
+
 export default function Datail(){
   const navigation = useNavigation();
   const route = useRoute();
 
   const [movie, setMovie] = useState({});
   const [openLink, setOpenLink] = useState(false);
+  const [favorite, setFavorite] = useState(false);
 
   useEffect(()=>{
     let isActive = true;
@@ -44,6 +47,9 @@ export default function Datail(){
 
       if(isActive){
         setMovie(response.data);
+        
+        const isFavorite = hasMovie(response.data);
+        setFavorite(isFavorite);
       }
     }
 
@@ -55,6 +61,19 @@ export default function Datail(){
       isActive = false;
     }
   },[]);
+
+  async function favoriteMovie(movie){
+
+    if (favorite){
+      await deleteMovie(movie.id);
+      setFavorite(false);
+      alert('FILME REMOVIDO DA SUA LISTA')
+    }else{
+      await saveMovie('@primereact', movie);
+      alert('Filme salvo na sua lista')
+      setFavorite(true);
+    }
+  }
 
   return(
     <Container>
@@ -68,12 +87,22 @@ export default function Datail(){
             color="#FFF"
           />
         </HeaderButton>
-        <HeaderButton>
-          <Ionicons 
+        <HeaderButton
+          onPress={()=> favoriteMovie(movie) }
+        >
+         { favorite ? (
+            <Ionicons 
             name="bookmark"
             size={28}
             color="#FFF"
           />
+         ) : (
+          <Ionicons 
+          name="bookmark-outline"
+          size={28}
+          color="#FFF"
+        />
+         )}
         </HeaderButton>
       </Header>
 
